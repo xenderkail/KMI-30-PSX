@@ -1,0 +1,6 @@
+{
+  "name": "KMI-30 PSX Swing Trading Workspace",
+  "description": "Institutional Swing Trading Workspace & Screener for the KMI-30 Index on the Pakistan Stock Exchange (PSX) with Shariah compliance, Level-2 DOM, and custom risk engine.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
