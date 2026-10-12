@@ -231,12 +231,26 @@ export const AddStockModal: React.FC<AddStockModalProps> = ({
                 <option value="Technology">Technology</option>
                 <option value="Power">Power</option>
                 <option value="Commercial Banks">Commercial Banks</option>
-                <option value="Automobile">Automobile</option>
+                <option value="Automobile Assembler">Automobile Assembler</option>
+                <option value="Automobile Parts & Accessories">Automobile Parts & Accessories</option>
+                <option value="Cable & Electrical Goods">Cable & Electrical Goods</option>
                 <option value="Chemicals">Chemicals</option>
-                <option value="Pharmaceuticals">Pharmaceuticals</option>
-                <option value="Textile">Textile</option>
                 <option value="Engineering">Engineering</option>
                 <option value="Food & Personal Care">Food & Personal Care</option>
+                <option value="Glass & Ceramics">Glass & Ceramics</option>
+                <option value="Insurance">Insurance</option>
+                <option value="Investment Banks / Cos">Investment Banks / Cos</option>
+                <option value="Leather & Tanneries">Leather & Tanneries</option>
+                <option value="Miscellaneous">Miscellaneous</option>
+                <option value="Paper & Board">Paper & Board</option>
+                <option value="Pharmaceuticals">Pharmaceuticals</option>
+                <option value="Refinery">Refinery</option>
+                <option value="Sugar & Allied Industries">Sugar & Allied Industries</option>
+                <option value="Synthetic & Rayon">Synthetic & Rayon</option>
+                <option value="Textile Composite">Textile Composite</option>
+                <option value="Textile Spinning">Textile Spinning</option>
+                <option value="Tobacco">Tobacco</option>
+                <option value="Transport">Transport</option>
               </select>
             </div>
 

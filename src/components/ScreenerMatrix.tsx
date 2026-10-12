@@ -17,7 +17,9 @@ import {
   SlidersHorizontal,
   ChevronRight,
   Plus,
-  Edit3
+  Edit3,
+  Trash2,
+  Building2
 } from 'lucide-react';
 
 interface ScreenerMatrixProps {
@@ -25,6 +27,7 @@ interface ScreenerMatrixProps {
   onSelectStock: (stock: StockData) => void;
   onOpenAddStock?: () => void;
   onOpenPriceModal?: (stock: StockData) => void;
+  onDeleteStock?: (symbol: string) => void;
 }
 
 type SortField = 'swingScore' | 'changePercent' | 'price' | 'volume' | 'rsi14' | 'symbol';
@@ -35,6 +38,7 @@ export const ScreenerMatrix: React.FC<ScreenerMatrixProps> = ({
   onSelectStock,
   onOpenAddStock,
   onOpenPriceModal,
+  onDeleteStock,
 }) => {
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -43,7 +47,42 @@ export const ScreenerMatrix: React.FC<ScreenerMatrixProps> = ({
   const [sortField, setSortField] = useState<SortField>('swingScore');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
 
-  // Sectors list
+  // Comprehensive PSX Sectors list for dropdown filter
+  const allPsxSectors = useMemo(() => {
+    const canonical = [
+      'All',
+      'Automobile Assembler',
+      'Automobile Parts & Accessories',
+      'Cable & Electrical Goods',
+      'Cement',
+      'Chemicals',
+      'Commercial Banks',
+      'Engineering',
+      'Fertilizer',
+      'Food & Personal Care',
+      'Glass & Ceramics',
+      'Insurance',
+      'Investment Banks / Cos',
+      'Leather & Tanneries',
+      'Miscellaneous',
+      'Oil & Gas',
+      'Paper & Board',
+      'Pharmaceuticals',
+      'Power',
+      'Refinery',
+      'Sugar & Allied Industries',
+      'Synthetic & Rayon',
+      'Technology',
+      'Textile',
+      'Tobacco',
+      'Transport'
+    ];
+    const fromStocks = Array.from(new Set(stocks.map(s => s.sector)));
+    const merged = ['All', ...Array.from(new Set([...canonical.filter(c => c !== 'All'), ...fromStocks]))];
+    return merged;
+  }, [stocks]);
+
+  // Quick sector filter chips
   const sectors = useMemo(() => {
     const list = ['All', 'Oil & Gas', 'Cement', 'Fertilizer', 'Technology', 'Power', 'Commercial Banks', 'Automobile', 'Pharmaceuticals', 'Chemicals', 'Textile', 'Engineering', 'Food & Personal Care'];
     return list;
@@ -230,32 +269,69 @@ export const ScreenerMatrix: React.FC<ScreenerMatrixProps> = ({
           </div>
         </div>
 
-        {/* Sector Quick Filters */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
-          <span className="text-[11px] text-gray-400 font-medium mr-1 uppercase tracking-wider shrink-0">
-            Sectors:
-          </span>
-          {sectors.map((sec) => {
-            const count = sec === 'All' ? stocks.length : stocks.filter(s => s.sector === sec).length;
-            if (count === 0) return null;
-            const isSelected = selectedSector === sec;
-            return (
-              <button
-                key={sec}
-                onClick={() => setSelectedSector(sec)}
-                className={`px-2.5 py-1 rounded-md text-xs whitespace-nowrap transition-all font-medium flex items-center gap-1.5 ${
-                  isSelected
-                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
-                    : 'bg-[#0d1117] text-gray-400 hover:text-gray-200 hover:bg-[#21262d] border border-[#30363d]'
-                }`}
+        {/* Sector Filters: Full Dropdown & Quick Chips */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 pb-2 border-b border-[#21262d]">
+          {/* Full Sector Dropdown */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 bg-[#0d1117] border border-[#30363d] rounded-lg px-2.5 py-1 text-xs">
+              <Building2 className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+              <label htmlFor="sector-filter-dropdown" className="text-gray-400 font-semibold shrink-0">
+                Sector:
+              </label>
+              <select
+                id="sector-filter-dropdown"
+                value={selectedSector}
+                onChange={(e) => setSelectedSector(e.target.value)}
+                className="bg-transparent text-emerald-400 font-bold focus:outline-none cursor-pointer text-xs max-w-[210px]"
+                aria-label="Filter stocks by sector dropdown"
               >
-                <span>{sec}</span>
-                <span className={`text-[10px] px-1 rounded ${isSelected ? 'bg-emerald-500/30 text-emerald-200' : 'bg-[#21262d] text-gray-500'}`}>
-                  {count}
-                </span>
+                {allPsxSectors.map((sec) => {
+                  const count = sec === 'All' ? stocks.length : stocks.filter(s => s.sector === sec).length;
+                  return (
+                    <option key={sec} value={sec} className="bg-[#161b22] text-gray-200">
+                      {sec} {count > 0 ? `(${count})` : ''}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+            {selectedSector !== 'All' && (
+              <button
+                onClick={() => setSelectedSector('All')}
+                className="text-[11px] text-gray-400 hover:text-white underline cursor-pointer"
+              >
+                Clear
               </button>
-            );
-          })}
+            )}
+          </div>
+
+          {/* Quick Sector Filter Chips */}
+          <div className="flex items-center gap-1.5 overflow-x-auto text-xs no-scrollbar">
+            <span className="text-[11px] text-gray-400 font-medium mr-1 uppercase tracking-wider shrink-0 hidden sm:inline">
+              Quick:
+            </span>
+            {sectors.map((sec) => {
+              const count = sec === 'All' ? stocks.length : stocks.filter(s => s.sector === sec).length;
+              if (count === 0 && sec !== 'All') return null;
+              const isSelected = selectedSector === sec;
+              return (
+                <button
+                  key={sec}
+                  onClick={() => setSelectedSector(sec)}
+                  className={`px-2 py-1 rounded text-[11px] whitespace-nowrap transition-all font-medium flex items-center gap-1 cursor-pointer ${
+                    isSelected
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
+                      : 'bg-[#0d1117] text-gray-400 hover:text-gray-200 hover:bg-[#21262d] border border-[#30363d]'
+                  }`}
+                >
+                  <span>{sec}</span>
+                  <span className={`text-[9px] px-1 rounded ${isSelected ? 'bg-emerald-500/30 text-emerald-200' : 'bg-[#21262d] text-gray-500'}`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Quantitative Swing Strategy Presets */}
@@ -404,18 +480,18 @@ export const ScreenerMatrix: React.FC<ScreenerMatrixProps> = ({
                   </div>
                 </div>
 
-                {/* Under Stock Action Tabs: Update Price, Investify, PSX DPS */}
+                {/* Under Stock Action Tabs: Update Price, Investify, PSX DPS, Delete */}
                 <div className="my-2 pt-2 border-t border-[#21262d] flex items-center justify-between gap-1.5 text-[10px] font-mono">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       if (onOpenPriceModal) onOpenPriceModal(stock);
                     }}
-                    className="flex-1 px-2 py-1 bg-[#0d1117] hover:bg-emerald-600/20 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 rounded flex items-center justify-center gap-1 transition-colors font-semibold shadow-sm"
+                    className="flex-1 px-2 py-1 bg-[#0d1117] hover:bg-emerald-600/20 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 rounded flex items-center justify-center gap-1 transition-colors font-semibold shadow-sm cursor-pointer"
                     title={`Click to update current market price for ${stock.symbol}`}
                   >
                     <Edit3 className="w-2.5 h-2.5" />
-                    <span>Update Price</span>
+                    <span>Update</span>
                   </button>
 
                   <a
@@ -426,7 +502,7 @@ export const ScreenerMatrix: React.FC<ScreenerMatrixProps> = ({
                     className="px-2 py-1 bg-[#0d1117] hover:bg-amber-600/20 text-amber-400 hover:text-amber-300 border border-amber-500/30 rounded flex items-center gap-1 transition-colors"
                     title={`Open ${stock.symbol} live quote on official PSX Data Portal`}
                   >
-                    <span>PSX DPS</span>
+                    <span>DPS</span>
                     <ExternalLink className="w-2.5 h-2.5" />
                   </a>
 
@@ -438,9 +514,24 @@ export const ScreenerMatrix: React.FC<ScreenerMatrixProps> = ({
                     className="px-2 py-1 bg-[#0d1117] hover:bg-blue-600/20 text-blue-400 hover:text-blue-300 border border-blue-500/30 rounded flex items-center gap-1 transition-colors"
                     title={`Open ${stock.symbol} profile on Investify.pk`}
                   >
-                    <span>Investify</span>
+                    <span>INV</span>
                     <ExternalLink className="w-2.5 h-2.5" />
                   </a>
+
+                  {onDeleteStock && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm(`Delete ${stock.symbol} (${stock.name}) from workspace?`)) {
+                          onDeleteStock(stock.symbol);
+                        }
+                      }}
+                      className="px-1.5 py-1 bg-[#0d1117] hover:bg-rose-900/30 text-gray-500 hover:text-rose-400 border border-[#30363d] hover:border-rose-500/40 rounded transition-colors cursor-pointer"
+                      title={`Remove ${stock.symbol} from workspace`}
+                    >
+                      <Trash2 className="w-2.5 h-2.5" />
+                    </button>
+                  )}
                 </div>
 
                 {/* Card Footer: Volume and Click Indicator */}
@@ -618,7 +709,7 @@ export const ScreenerMatrix: React.FC<ScreenerMatrixProps> = ({
                         <div className="flex items-center justify-center gap-1 font-mono text-[11px]">
                           <button
                             onClick={() => onOpenPriceModal && onOpenPriceModal(stock)}
-                            className="px-2 py-1 rounded bg-[#0d1117] hover:bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 transition-colors font-semibold"
+                            className="px-2 py-1 rounded bg-[#0d1117] hover:bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 transition-colors font-semibold cursor-pointer"
                             title={`Update price for ${stock.symbol}`}
                           >
                             <Edit3 className="w-2.5 h-2.5" />
@@ -646,11 +737,24 @@ export const ScreenerMatrix: React.FC<ScreenerMatrixProps> = ({
                           </a>
                           <button
                             onClick={() => onSelectStock(stock)}
-                            className="px-2 py-1 rounded bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-[10px] font-semibold transition-colors"
+                            className="px-2 py-1 rounded bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-[10px] font-semibold transition-colors cursor-pointer"
                             title="Open Deep Workspace"
                           >
                             Chart
                           </button>
+                          {onDeleteStock && (
+                            <button
+                              onClick={() => {
+                                if (window.confirm(`Delete ${stock.symbol} (${stock.name}) from workspace?`)) {
+                                  onDeleteStock(stock.symbol);
+                                }
+                              }}
+                              className="p-1 rounded bg-[#0d1117] hover:bg-rose-900/30 text-gray-500 hover:text-rose-400 border border-[#30363d] hover:border-rose-500/40 transition-colors cursor-pointer"
+                              title={`Delete ${stock.symbol} from workspace`}
+                            >
+                              <Trash2 className="w-2.5 h-2.5" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

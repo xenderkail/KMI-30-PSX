@@ -105,7 +105,7 @@ export function exportStandaloneHtml(stocks: StockData[]) {
         <div>
           <div class="flex items-center gap-2">
             <h1 class="text-base font-bold text-white tracking-tight">
-              KMI-30 <span class="text-emerald-400">SWING</span> PRO
+              PSX <span class="text-emerald-400">SWING</span> PRO
             </h1>
             <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
               OCTOBER 2026 EDITION

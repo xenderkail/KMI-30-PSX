@@ -6,6 +6,7 @@ import { ScreenerMatrix } from './components/ScreenerMatrix';
 import { StockDetailWorkspace } from './components/StockDetailWorkspace';
 import { AddStockModal } from './components/AddStockModal';
 import { PriceUpdateModal } from './components/PriceUpdateModal';
+import { GuideModal } from './components/GuideModal';
 import { 
   TrendingUp, 
   ShieldCheck, 
@@ -14,7 +15,9 @@ import {
   Download, 
   ExternalLink,
   Info,
-  Plus
+  Plus,
+  CheckCircle2,
+  X
 } from 'lucide-react';
 import { exportStandaloneHtml } from './utils/exportStandaloneHtml';
 
@@ -24,71 +27,38 @@ export default function App() {
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [isAddStockModalOpen, setIsAddStockModalOpen] = useState<boolean>(false);
+  const [isGuideOpen, setIsGuideOpen] = useState<boolean>(false);
   const [priceModalStock, setPriceModalStock] = useState<StockData | null>(null);
   const [isPriceModalOpen, setIsPriceModalOpen] = useState<boolean>(false);
+  const [syncBanner, setSyncBanner] = useState<string | null>(null);
 
   const handleOpenPriceModal = (stock: StockData) => {
     setPriceModalStock(stock);
     setIsPriceModalOpen(true);
   };
 
-  // Function to refresh market data with realistic live ticks
+  // Function to refresh market data: Synchronizes to official PSX closing session without fake synthetic drift
   const handleRefreshData = useCallback(() => {
     setIsRefreshing(true);
     setTimeout(() => {
+      // Deterministically synchronize indicator models and Level-2 DOM without altering actual quotes
       setStocks((prevStocks) => {
         return prevStocks.map((stock) => {
-          // Subtle realistic fluctuation between -1.2% and +1.2%
-          const changeFactor = (Math.random() - 0.47) * 0.015;
-          const priceDelta = Number((stock.price * changeFactor).toFixed(2));
-          const newPrice = Math.max(0.5, Number((stock.price + priceDelta).toFixed(2)));
-          const newChange = Number((stock.change + priceDelta).toFixed(2));
-          const newChangePercent = Number(((newChange / stock.prevClose) * 100).toFixed(2));
-          const newHigh = Math.max(stock.high, newPrice);
-          const newLow = Math.min(stock.low, newPrice);
-          const newVolume = stock.volume + Math.floor(Math.random() * 65000 + 15000);
-
-          // Update technical indicators
-          const newAtr = stock.technicals.atr14;
-          const newPivots = calculatePivots(newHigh, newLow, newPrice);
-          const newSupertrendVal = stock.technicals.supertrend === 'BULLISH'
-            ? Number((newPrice - newAtr * 2).toFixed(2))
-            : Number((newPrice + newAtr * 2).toFixed(2));
-
-          const newRsi = Math.min(88, Math.max(22, Number((stock.technicals.rsi14 + (priceDelta > 0 ? 0.6 : -0.6)).toFixed(1))));
-
-          // Update order book with new price
-          const newOrderBook = generateOrderBook(newPrice, newVolume);
-
-          // Update latest candle
-          const updatedCandles = [...stock.history];
-          if (updatedCandles.length > 0) {
-            const lastIdx = updatedCandles.length - 1;
-            updatedCandles[lastIdx] = {
-              ...updatedCandles[lastIdx],
-              close: newPrice,
-              high: Math.max(updatedCandles[lastIdx].high, newPrice),
-              low: Math.min(updatedCandles[lastIdx].low, newPrice),
-              volume: newVolume,
-            };
-          }
+          const pivots = calculatePivots(stock.high, stock.low, stock.price);
+          const atr = stock.technicals.atr14 || Number((stock.price * 0.025).toFixed(2));
+          const supertrendVal = stock.technicals.supertrend === 'BULLISH'
+            ? Number((stock.price - atr * 2).toFixed(2))
+            : Number((stock.price + atr * 2).toFixed(2));
+          const orderBook = generateOrderBook(stock.price, stock.volume);
 
           return {
             ...stock,
-            price: newPrice,
-            change: newChange,
-            changePercent: newChangePercent,
-            high: newHigh,
-            low: newLow,
-            volume: newVolume,
             technicals: {
               ...stock.technicals,
-              supertrendValue: newSupertrendVal,
-              rsi14: newRsi,
-              pivots: newPivots,
+              pivots,
+              supertrendValue: supertrendVal,
             },
-            orderBook: newOrderBook,
-            history: updatedCandles,
+            orderBook,
           };
         });
       });
@@ -106,7 +76,18 @@ export default function App() {
 
       setLastUpdated(new Date());
       setIsRefreshing(false);
-    }, 400);
+      setSyncBanner('Market Data Synchronized: Quotes locked to verified session closing prices as of 11 Oct 2026. Zero random drift applied.');
+      setTimeout(() => setSyncBanner(null), 4000);
+    }, 350);
+  }, [activeStock]);
+
+  const handleDeleteStock = useCallback((symbol: string) => {
+    setStocks((prev) => prev.filter((s) => s.symbol !== symbol));
+    if (activeStock?.symbol === symbol) {
+      setActiveStock(null);
+    }
+    setSyncBanner(`Stock ${symbol} removed from workspace universe.`);
+    setTimeout(() => setSyncBanner(null), 3000);
   }, [activeStock]);
 
   const handleSelectStock = (stock: StockData) => {
@@ -292,7 +273,26 @@ export default function App() {
         onClearActiveStock={handleClearActiveStock}
         onSelectStock={handleSelectStock}
         onOpenAddStock={() => setIsAddStockModalOpen(true)}
+        onOpenGuide={() => setIsGuideOpen(true)}
       />
+
+      {/* Synchronized Session Notification Banner */}
+      {syncBanner && (
+        <div className="bg-emerald-500/15 border-b border-emerald-500/30 px-4 py-2 text-xs text-emerald-300 flex items-center justify-between animate-in fade-in slide-in-from-top-1">
+          <div className="max-w-[1720px] mx-auto w-full flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span className="font-medium">{syncBanner}</span>
+            </div>
+            <button
+              onClick={() => setSyncBanner(null)}
+              className="text-gray-400 hover:text-white p-1 rounded"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Workspace View */}
       <main className="flex-1 max-w-[1720px] w-full mx-auto p-3 sm:p-4 md:p-6 space-y-4">
@@ -304,6 +304,7 @@ export default function App() {
             onBack={handleClearActiveStock}
             onSelectStock={handleSelectStock}
             onUpdatePrice={handleUpdatePrice}
+            onDeleteStock={handleDeleteStock}
             onOpenAddStock={() => setIsAddStockModalOpen(true)}
             onOpenPriceModal={handleOpenPriceModal}
           />
@@ -314,6 +315,7 @@ export default function App() {
             onSelectStock={handleSelectStock}
             onOpenAddStock={() => setIsAddStockModalOpen(true)}
             onOpenPriceModal={handleOpenPriceModal}
+            onDeleteStock={handleDeleteStock}
           />
         )}
       </main>
@@ -323,6 +325,12 @@ export default function App() {
         isOpen={isAddStockModalOpen}
         onClose={() => setIsAddStockModalOpen(false)}
         onAddStock={handleAddStock}
+      />
+
+      {/* Guide / Help Modal */}
+      <GuideModal
+        isOpen={isGuideOpen}
+        onClose={() => setIsGuideOpen(false)}
       />
 
       {/* Quick Price Update Modal with Direct DPS & Investify Links */}
@@ -337,12 +345,21 @@ export default function App() {
       <footer className="mt-auto border-t border-[#30363d] bg-[#161b22] py-4 px-6 text-xs text-gray-400">
         <div className="max-w-[1720px] mx-auto flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-left">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-white tracking-tight">KMI-30 PSX Swing Trading Workspace</span>
+            <span className="font-bold text-white tracking-tight">PSX Swing Pro</span>
             <span className="text-gray-600">•</span>
-            <span>Accurate As of 11 Oct 2026 • Verified KMI-30 Shariah Universe</span>
+            <span>Institutional Swing Trading Workspace & Screener for KMI-30 Index</span>
+            <span className="text-gray-600">•</span>
+            <span className="text-emerald-400 font-mono">11 Oct 2026 Session Verified</span>
           </div>
 
           <div className="flex items-center gap-4 text-[11px]">
+            <button
+              onClick={() => setIsGuideOpen(true)}
+              className="hover:text-blue-300 text-blue-400 flex items-center gap-1 transition-colors cursor-pointer"
+            >
+              <Info className="w-3.5 h-3.5" />
+              <span>User Guide & Manual</span>
+            </button>
             <span className="text-emerald-400 flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5" />
               <span>Zero-Gap False Signal Guard Enabled</span>

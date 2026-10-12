@@ -1,0 +1,31 @@
+export const PSX_ALL_SECTORS = [
+  'Oil & Gas Exploration Companies',
+  'Oil & Gas Marketing Companies',
+  'Cement',
+  'Fertilizer',
+  'Technology & Communication',
+  'Commercial Banks',
+  'Power Generation & Distribution',
+  'Automobile Assembler',
+  'Automobile Parts & Accessories',
+  'Refinery',
+  'Pharmaceuticals',
+  'Chemical',
+  'Engineering',
+  'Textile Composite',
+  'Textile Spinning',
+  'Textile Weaving',
+  'Food & Personal Care Products',
+  'Sugar & Allied Industries',
+  'Paper & Board',
+  'Glass & Ceramics',
+  'Cables & Electrical Goods',
+  'Investment Banks / NBFCs',
+  'Modarabas',
+  'Real Estate Investment Trust (REIT)',
+  'Transport',
+  'Tobacco',
+  'Miscellaneous'
+] as const;
+
+export type PSXSector = typeof PSX_ALL_SECTORS[number];

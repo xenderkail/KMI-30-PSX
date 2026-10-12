@@ -13,7 +13,9 @@ import {
   Sliders,
   CheckCircle2,
   Sparkles,
-  Plus
+  Plus,
+  BookOpen,
+  HelpCircle
 } from 'lucide-react';
 import { exportStandaloneHtml } from '../utils/exportStandaloneHtml';
 
@@ -26,6 +28,7 @@ interface HeaderProps {
   onClearActiveStock: () => void;
   onSelectStock: (stock: StockData) => void;
   onOpenAddStock?: () => void;
+  onOpenGuide?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -36,7 +39,8 @@ export const Header: React.FC<HeaderProps> = ({
   activeStock,
   onClearActiveStock,
   onSelectStock,
-  onOpenAddStock
+  onOpenAddStock,
+  onOpenGuide
 }) => {
   const [currentTime, setCurrentTime] = useState<string>('');
   const [marketStatus, setMarketStatus] = useState<string>('REGULAR PSX TRADING');
@@ -132,7 +136,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="hidden md:flex items-center gap-2 bg-[#161b22] px-2.5 py-0.5 rounded border border-[#30363d]">
             <span className="text-gray-400">Swing Bias:</span>
             <span className="font-mono text-emerald-400 font-semibold">
-              {bullishSupertrendCount}/30 BULLISH ({((bullishSupertrendCount / 30) * 100).toFixed(0)}%)
+              {bullishSupertrendCount}/{stocks.length} BULLISH ({stocks.length > 0 ? ((bullishSupertrendCount / stocks.length) * 100).toFixed(0) : 0}%)
             </span>
           </div>
           <span className="text-[11px] text-gray-400 hidden sm:inline">
@@ -152,13 +156,13 @@ export const Header: React.FC<HeaderProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-base font-bold text-white tracking-tight flex items-center gap-1.5">
-                  KMI-30 <span className="text-emerald-400">SWING</span> PRO
+                  PSX <span className="text-emerald-400">SWING</span> PRO
                 </h1>
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                  PSX INSTITUTIONAL
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  {stocks.length} CONSTITUENTS
                 </span>
               </div>
-              <p className="text-xs text-gray-400">Shariah-Compliant Swing Screener & Workspace</p>
+              <p className="text-xs text-gray-400">KMI-30 Shariah Screener & Institutional Workspace</p>
             </div>
           </div>
 
@@ -243,12 +247,24 @@ export const Header: React.FC<HeaderProps> = ({
             <span>{isRefreshing ? 'Updating Market...' : 'Update Market Data'}</span>
           </button>
 
+          {/* Guide / Help Tab */}
+          {onOpenGuide && (
+            <button
+              onClick={onOpenGuide}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-[#21262d] hover:bg-[#30363d] text-blue-400 border border-blue-500/40 hover:border-blue-500/70 transition-all duration-200 active:scale-95 shadow-md"
+              title="Open PSX Swing Pro Institutional User Guide & Manual"
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>Guide / Help</span>
+            </button>
+          )}
+
           {/* Export / Download App Button */}
           <button
             onClick={handleDownloadApp}
             disabled={isExporting}
             className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold bg-[#21262d] hover:bg-[#30363d] text-emerald-400 border border-emerald-500/30 hover:border-emerald-500/60 transition-all duration-200 active:scale-95 shadow-md"
-            title="Download full standalone self-contained HTML application with all 30 stocks"
+            title="Download full standalone self-contained HTML application with all active stocks"
           >
             <Download className="w-3.5 h-3.5 text-emerald-400" />
             <span>{isExporting ? 'Generating HTML...' : 'Export / Download App'}</span>
